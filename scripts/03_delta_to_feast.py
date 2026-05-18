@@ -1,11 +1,13 @@
 # scripts/03_delta_to_feast.py
+from pathlib import Path
 import pandas as pd
 import glob, os, redis, json
 
 r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+DELTA_LAKE_RAW_PATH = Path(__file__).resolve().parents[1] / "delta-lake" / "raw"
 
 def load_from_delta_and_push_feast():
-    files = glob.glob("delta-lake/raw/*.parquet")
+    files = glob.glob(str(DELTA_LAKE_RAW_PATH / "*.parquet"))
     if not files:
         print("No data in Delta Lake yet")
         return

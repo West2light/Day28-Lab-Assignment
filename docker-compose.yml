@@ -24,17 +24,21 @@ services:
   # ── Prefect ───────────────────────────────────────────────
   prefect-orion:
     image: prefecthq/prefect:2.14.0-python3.10
-    command: prefect orion start --host 0.0.0.0
+    command: prefect server start --host 0.0.0.0
     ports:
       - "4200:4200"
     volumes:
       - prefect_data:/root/.prefect
 
   prefect-worker:
-    image: prefecthq/prefect:2.14.0-python3.10
+    build:
+      context: ./prefect/flows
+      dockerfile: Dockerfile
+    image: day28-prefect-worker:latest
     command: prefect worker start -p docker -n lab28-worker
     environment:
       PREFECT_API_URL: http://prefect-orion:4200/api
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     volumes:
       - ./prefect/flows:/opt/prefect/flows
       - ./delta-lake:/opt/delta-lake
@@ -70,6 +74,9 @@ services:
       - "3000:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
 
   # ── API Gateway ───────────────────────────────────────────
   api-gateway:

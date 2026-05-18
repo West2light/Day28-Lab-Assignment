@@ -34,7 +34,7 @@ Kaggle (GPU T4/P100):
 ### 1. Khởi động Local Stack
 
 ```bash
-cd lab28
+cd Day28-Lab-Assignment
 docker compose up -d
 docker compose ps  # Kiểm tra tất cả services Up
 ```
@@ -46,7 +46,65 @@ docker compose ps  # Kiểm tra tất cả services Up
 - Prometheus: http://localhost:9090
 - API Gateway: http://localhost:8000
 
-### 2. Setup Kaggle GPU
+### 2. Deploy Prefect Flows
+
+Prefect flow được chạy trong container worker riêng để tránh lệch dependency giữa local venv và môi trường Prefect.
+
+```powershell
+Set-Location E:\VinAI\Day28-Lab-Assignment\prefect\flows
+$env:PREFECT_DEPLOY = "1"
+python .\kafka_to_delta.py
+```
+
+Sau khi deploy xong, mở Prefect UI tại http://localhost:4200 và vào mục **Deployments** hoặc **Flow Runs** để xem flow.
+
+### 3. Chạy Smoke Tests
+
+Chạy bộ test end-to-end để xác nhận các integration chính vẫn hoạt động:
+
+```powershell
+Set-Location E:\VinAI\Day28-Lab-Assignment
+pytest smoke-tests\ -v
+```
+
+Kỳ vọng là toàn bộ test pass trước khi chụp màn hình nộp bài.
+
+### 4. Truy Cập Dashboard
+
+- Grafana: http://localhost:3000
+    - Tài khoản mặc định: `admin / admin`
+    - Dashboard mẫu: `Day28 Overview`
+- Prometheus: http://localhost:9090
+    - Dùng để kiểm tra target scrape và query metrics
+- Prefect: http://localhost:4200
+    - Dùng để xem deployments, flow runs, task states, và logs
+
+### 5. Start Platform Trong 1 Lệnh
+
+Nếu muốn dựng lại toàn bộ stack từ đầu:
+
+```powershell
+Set-Location E:\VinAI\Day28-Lab-Assignment
+docker compose up -d --build
+```
+
+Sau đó kiểm tra nhanh:
+
+```powershell
+docker compose ps
+```
+
+### 6. Ghi Chú Về Submission
+
+Khi nộp bài, nên chụp các màn hình sau:
+
+- Prefect UI đang có flow run
+- `curl http://localhost:8000/health`
+- Grafana dashboard `Day28 Overview`
+- Kết quả `pytest smoke-tests\ -v`
+- Kết quả `python scripts/production_readiness_check.py`
+
+### 7. Setup Kaggle GPU
 
 Tạo Kaggle Notebook với GPU T4 x2, chọn 1 trong 2 option:
 

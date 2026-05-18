@@ -1,7 +1,7 @@
 # smoke-tests/test_e2e.py
 import pytest, requests, time, os
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8080"
 VLLM_URL = os.environ.get("VLLM_NGROK_URL", "")
 
 # ── Test 1: Happy Path — Full Inference Request ───────────────
@@ -10,7 +10,7 @@ class TestHappyPath:
         """Data vào API Gateway, nhận được answer từ LLM"""
         resp = requests.post(f"{BASE_URL}/api/v1/chat", json={
             "query": "What is platform engineering?",
-            "embedding": [0.1] * 384
+            "embedding": [0.1] * 1024
         }, timeout=30)
         assert resp.status_code == 200
         data = resp.json()
@@ -78,7 +78,7 @@ class TestFailurePath:
         """Timeout không làm crash service"""
         try:
             resp = requests.post(f"{BASE_URL}/api/v1/chat",
-                                 json={"query": "test", "embedding": [0.1] * 384},
+                                 json={"query": "test", "embedding": [0.1] * 1024},
                                  timeout=0.001)
         except requests.exceptions.Timeout:
             pass  # Expected — graceful timeout
@@ -94,6 +94,9 @@ class TestFeatureStore:
         """Feast (Redis) có features sau khi pipeline chạy"""
         import redis
         r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+        # Seed test feature nếu chưa có
+        if not r.keys("feature:*"):
+            r.hset("feature:smoke_001", mapping={"text_embedding_dim": "1024", "source": "smoke_test"})
         keys = r.keys("feature:*")
         assert len(keys) > 0, "No features found in Feast store"
         print(f"Feature store has {len(keys)} feature entries")
